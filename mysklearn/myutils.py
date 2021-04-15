@@ -421,3 +421,4 @@ def generate_table_header(X_train):
     """
     headers = ["a" + str(i) for i in range(len(X_train[0]))] + ["label"]
     return headers
+
