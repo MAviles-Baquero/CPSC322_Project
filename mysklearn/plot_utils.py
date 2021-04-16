@@ -72,10 +72,6 @@ def plot_scatter(x, y, xlabel, ylabel, title):
     plt.scatter(x, y)
     
 
-def plot_eda(table, indicator, group, phase):
-
-    table)
-
 
     
     

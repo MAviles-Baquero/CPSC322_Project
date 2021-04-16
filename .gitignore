@@ -2,4 +2,4 @@
 .ipynb_checkpoints
 .vscode
 input_data/week21_working.csv
-myskylearn/__pycache__
+mysklearn/__pycache__
