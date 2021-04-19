@@ -246,7 +246,7 @@ def categorize_continuous(value, cutoffs, categories):
 
         # Add on the max values at the end for [lower_val, upper_val]
         if i == len(cutoffs) - 2:
-            if values == upper_val:
+            if value == upper_val:
                 return categories[i]
 
 def categorize_continuous_list(list_vals, cutoffs, categories):
