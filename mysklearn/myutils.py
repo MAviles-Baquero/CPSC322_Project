@@ -422,3 +422,32 @@ def generate_table_header(X_train):
     headers = ["a" + str(i) for i in range(len(X_train[0]))] + ["label"]
     return headers
 
+def compute_bootstrap(data):
+    """Computes the bootstrap training data
+
+    Args:
+        data (list of list of obj)
+
+    Returns:
+        train_set TODO return test_set
+    """
+    n = len(data)
+    train_set = []
+    test_indices = [x for x in range(n)]
+    # N times
+    for i in range(n):
+        # Add a random attribute and remove it from the test set
+        j = random.randrange(0, n)
+        train_set.append(data[j])
+        try:
+            test_indices.remove(j)
+        except ValueError:
+            pass
+    test_set = myutils.distribute_data_by_index(data, test_indices)
+    return train_set, test_set
+
+def compute_random_subset(values, num_values):
+    """Generates a random subset of num_values size"""
+    shuffled = values[:]
+    random.shuffle(shuffled)
+    return shuffled[:num_values]

@@ -1,8 +1,13 @@
+# Name: Tristan Call
+# Date: 5/1/21
+# Description: This file contains all the used classifiers
+
 import mysklearn.myutils as myutils
 from mysklearn.mypytable import MyPyTable
 import math
 import copy
 import random
+import myevaluation
 
 class MySimpleLinearRegressor:
     """Represents a simple linear regressor.
@@ -1004,3 +1009,100 @@ class MyDecisionTreeClassifier:
             You will need to install graphviz in the Docker container as shown in class to complete this method.
         """
         pass # TODO: (BONUS) fix this
+
+class MyRandomForestClassifier:
+    """Represents a random forest.
+
+    Attributes:
+        N (int): Number of trees to generate
+        F (int): Number of subsets to include in each tree
+        M (int): Number of best trees to keep
+        remainder_xtrain(list of list of obj): Remainder x values
+        remainder_ytrain(list of list of obj): Remainder y values
+        xtrain(list of list of obj): x train for tree construction
+        ytrain(list of list of obj): y train for tree construction
+        chosen_trees(list of dict of tree, accuracy): 
+        
+
+    Notes:
+        Terminology: instance = sample = row and attribute = feature = column
+    """
+    
+    def __init__(self, N, F, M):
+        """Initializer for MyRandomForestClassifier.
+
+        Args:
+            N (int): Number of trees to generate
+            F (int): Number of subsets to include in each tree
+            M (int): Number of best trees to keep            
+        """
+        self.N = N
+        self.F = F
+        self.M = M
+        self.remainder_xtrain = None
+        self.remainder_ytrain = None
+        self.xtrain = None
+        self.ytrain = None
+
+
+    def fit(self, X_train, y_train):
+        """Fits a simple linear regression line to X_train and y_train.
+
+        Args:
+            X_train(list of list of numeric vals): The list of training samples
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of numeric vals): The target y values (parallel to X_train) 
+                The shape of y_train is n_train_samples
+        """
+        self.generate_remainder_set(X_train, y_train)
+        train = [self.xtrain[i] + [self.ytrain[i]] for i in range(len(self.xtrain))]
+        # Generate trees
+        for i in range(self.N):
+            # Grab random attribute subset
+            train_set, validation_set = myutils.compute_bootstrap(train)
+            self.generate_tree(train_set)
+            # Determine accuracy
+
+    def generate_tree(self):
+        pass
+
+    def generate_remainder_set(self, X_train, Y_train):
+        """Generates the remainder set and test set
+
+        Args:
+            X_train(list of list of numeric vals): The list of training samples
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of numeric vals): The target y values (parallel to X_train) 
+                The shape of y_train is n_train_samples
+        """
+        X_train_folds, X_test_folds = stratified_kfold_cross_validation(X_train, y_train, n_splits=3)
+        # Grab a random remainder fold
+        i = random.randrange(0, 3)
+        remainder_fold = X_test_folds[i]
+        self.remainder_xtrain = myutils.distribute_data_by_index(X_train, remainder_fold)
+        self.remainder_ytrain = myutils.distribute_data_by_index(y_train, remainder_fold)
+
+        # Grab train fold
+        train_fold = X_train_folds[i]
+        self.xtrain = myutils.distribute_data_by_index(X_train, train_fold)
+        self.ytrain = myutils.distribute_data_by_index(y_train, train_fold)
+
+
+    def predict(self, X_test):
+        """Makes predictions for test instances in X_test.
+
+        Args:
+            X_test(list of list of obj): The list of testing samples
+                The shape of X_test is (n_test_samples, n_features)
+
+        Returns:
+            y_predicted(list of obj): The predicted target y values (parallel to X_test)
+        """
+        pass
+
+    def test_tree_performance(self):
+        """Tests the forest's performance against the remainder set
+
+        Returns: 
+            (str) with performance data
+        """
