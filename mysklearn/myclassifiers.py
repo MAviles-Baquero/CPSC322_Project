@@ -532,17 +532,18 @@ class MyZeroRClassifier:
         self.y_train = Y_train
 
         # Group the data by label
-        all_data = MyPyTable(column_names="label", data=self.y_train)
+        ytrain_2d = [[y] for y in self.y_train]
+        all_data = MyPyTable(column_names="label", data=ytrain_2d)
         headers, subtables = all_data.group_by("label")
         
         # Find the most common label
         max_count = len(subtables[0])
-        max_value = subtables[0][0]
+        max_value = subtables[0][0][0]
         for subtable in subtables:
             count = len(subtable)
             if count > max_count:
                 max_count = count
-                max_value = subtable[0]
+                max_value = subtable[0][0]
 
         self.prediction = max_value
 
