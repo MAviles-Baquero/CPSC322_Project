@@ -7,7 +7,8 @@ from mysklearn.mypytable import MyPyTable
 import math
 import copy
 import random
-import myevaluation
+import mysklearn.myevaluation as myevaluation
+from operator import itemgetter
 
 class MySimpleLinearRegressor:
     """Represents a simple linear regressor.
@@ -1021,7 +1022,9 @@ class MyRandomForestClassifier:
         remainder_ytrain(list of list of obj): Remainder y values
         xtrain(list of list of obj): x train for tree construction
         ytrain(list of list of obj): y train for tree construction
-        chosen_trees(list of dict of tree, accuracy): 
+        chosen_trees(list of dict): List of all trees
+            Structure of {'tree': MyDecisionTree, 'attributes': [str of included], 
+                'accuracy': float}
         
 
     Notes:
@@ -1043,6 +1046,7 @@ class MyRandomForestClassifier:
         self.remainder_ytrain = None
         self.xtrain = None
         self.ytrain = None
+        self.chosen_trees = None
 
 
     def fit(self, X_train, y_train):
@@ -1055,18 +1059,81 @@ class MyRandomForestClassifier:
                 The shape of y_train is n_train_samples
         """
         self.generate_remainder_set(X_train, y_train)
+        trees = []
+
+        # Get data into right formats
         train = [self.xtrain[i] + [self.ytrain[i]] for i in range(len(self.xtrain))]
+        headers = myutils.generate_table_header(self.xtrain)
+        # Set F to valid value
+        f = self.F
+        if f > len(headers):
+            f = len(headers)
+
         # Generate trees
         for i in range(self.N):
-            # Grab random attribute subset
+            # Grab random attribute subset and compute bootsrap
+            tree = {}
+            tree['attributes'] = myutils.compute_random_subset(headers[:-1], f)
             train_set, validation_set = myutils.compute_bootstrap(train)
-            self.generate_tree(train_set)
+            # Get right data based on attribute subset
+            # Note: Returns as mypytables
+            train_set = myutils.get_columns_array(train_set, headers, tree['attributes'] + ['label'])
+            validation_set = myutils.get_columns_array(validation_set, headers, tree['attributes'] + ['label'])
+
+
+            tree['tree'] = self.generate_tree(train_set.data)
             # Determine accuracy
+            self.test_tree(tree, validation_set.data)
+            trees.append(tree)
 
-    def generate_tree(self):
-        pass
+        # Find best M of N trees
+        self.chosen_trees = self.find_best_trees(trees)
+        print(self.chosen_trees)
 
-    def generate_remainder_set(self, X_train, Y_train):
+    def find_best_trees(self, trees):
+        """Finds the best N trees
+
+        Args:
+            trees (list of dict)
+        
+        Returns:
+            chosen trees
+        """
+        sorted_list = sorted(trees, key=itemgetter('accuracy'), reverse=True)
+        return sorted_list[:self.N - 1]
+
+
+    def test_tree(self, tree, validation_set):
+        """Tests the tree and computes the accuracy
+
+        Args:
+            tree (dict)
+            validation_set (list of list of obj)
+        Note: Includes accuracy in tree dictionary
+        """
+        xdata = [row[:-1] for row in validation_set]
+        actual_values = [row[-1] for row in validation_set]
+        predicted_values = tree['tree'].predict(xdata)
+        tree['accuracy'] = myutils.calculate_accuracy(predicted_values, actual_values)
+
+    def generate_tree(self, train):
+        """This function generates a decision tree
+
+        Args:
+            train(list of list of numeric vals): The list of training samples with class labels
+                The shape of X_train is (n_train_samples, n_features)
+        
+        Returns:
+            MyDecisionTree
+        """
+        tree = MyDecisionTreeClassifier()
+        # Split data up
+        xdata = [row[:-1] for row in train]
+        ydata = [row[-1] for row in train]
+        tree.fit(xdata, ydata)
+        return tree
+
+    def generate_remainder_set(self, X_train, y_train):
         """Generates the remainder set and test set
 
         Args:
@@ -1075,7 +1142,7 @@ class MyRandomForestClassifier:
             y_train(list of numeric vals): The target y values (parallel to X_train) 
                 The shape of y_train is n_train_samples
         """
-        X_train_folds, X_test_folds = stratified_kfold_cross_validation(X_train, y_train, n_splits=3)
+        X_train_folds, X_test_folds = myevaluation.stratified_kfold_cross_validation(X_train, y_train, n_splits=3)
         # Grab a random remainder fold
         i = random.randrange(0, 3)
         remainder_fold = X_test_folds[i]

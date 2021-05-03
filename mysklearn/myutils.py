@@ -7,6 +7,7 @@ from mysklearn.mypytable import MyPyTable
 import mysklearn.plot_utils
 import numpy as np 
 import math
+import random
 
 def compute_equal_width_cutoffs(values, num_bins):
     """ This computes equal width cutoffs for a given number of bins
@@ -443,7 +444,7 @@ def compute_bootstrap(data):
             test_indices.remove(j)
         except ValueError:
             pass
-    test_set = myutils.distribute_data_by_index(data, test_indices)
+    test_set = distribute_data_by_index(data, test_indices)
     return train_set, test_set
 
 def compute_random_subset(values, num_values):
@@ -451,3 +452,17 @@ def compute_random_subset(values, num_values):
     shuffled = values[:]
     random.shuffle(shuffled)
     return shuffled[:num_values]
+
+def get_columns_array(data, header, columns):
+    """Gets the columns from a 2d array
+
+    Args:
+        data (list of list of obj)
+        header(list of str)
+        columns(list of str)
+    Returns 
+        (list of list of obj)
+    """
+    table = MyPyTable(column_names=header, data=data)
+    columns = table.get_columns(columns)
+    return columns

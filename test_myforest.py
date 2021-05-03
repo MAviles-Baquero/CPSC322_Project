@@ -4,7 +4,7 @@ import numpy as np
 import scipy.stats as stats 
 import mysklearn.myutils as myutils
 
-from mysklearn.myclassifiers import MySimpleLinearRegressor, MyKNeighborsClassifier, MyNaiveBayesClassifier, MyDecisionTreeClassifier
+from mysklearn.myclassifiers import MySimpleLinearRegressor, MyKNeighborsClassifier, MyNaiveBayesClassifier, MyDecisionTreeClassifier, MyRandomForestClassifier
 
 # pasted from DecisionTreeFun
 header = ["level", "lang", "tweets", "phd"]
@@ -28,13 +28,15 @@ X = [
     ["Mid", "Java", "yes", "no"],
     ["Junior", "Python", "no", "yes"]
 ]
-
-
 y = ["False", "False", "True", "True", "True", "False", "True", "False", "True", "True", "True", "True", "True", "False"]
-# stitch X and y together to make one table
-table = [X[i] + [y[i]] for i in range(len(X))]
 
 def test_forest_fit():
-    pass
+    random.seed(0)
+    forest = MyRandomForestClassifier(3, 2, 2)
+    forest.fit(X, y)
+
+
+
+    assert False == True
 def test_forest_predict():
-    pass
+    assert False == True
