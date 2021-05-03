@@ -1058,7 +1058,8 @@ class MyRandomForestClassifier:
             y_train(list of numeric vals): The target y values (parallel to X_train) 
                 The shape of y_train is n_train_samples
         """
-        self.generate_remainder_set(X_train, y_train)
+        self.xtrain = X_train
+        self.ytrain = y_train
         trees = []
 
         # Get data into right formats
@@ -1079,7 +1080,6 @@ class MyRandomForestClassifier:
             # Note: Returns as mypytables
             train_set = myutils.get_columns_array(train_set, headers, tree['attributes'] + ['label'])
             validation_set = myutils.get_columns_array(validation_set, headers, tree['attributes'] + ['label'])
-
 
             tree['tree'] = self.generate_tree(train_set.data)
             # Determine accuracy
@@ -1167,9 +1167,16 @@ class MyRandomForestClassifier:
         """
         pass
 
-    def test_tree_performance(self):
-        """Tests the forest's performance against the remainder set
+    def test_tree_performance(self, X_train, y_train):
+        """Tests the forest's performance against a remainder set
+
+        Args:
+            X_train(list of list of numeric vals): The list of training samples
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of numeric vals): The target y values (parallel to X_train) 
+                The shape of y_train is n_train_samples
 
         Returns: 
             (str) with performance data
         """
+        self.generate_remainder_set(X_train, y_train)
