@@ -50,8 +50,8 @@ def plot_pie_percent(values, labels, title1):
         title1 (string)
     """
     plt.figure()
-    plt.title(title1)
-    plt.pie(values, labels=labels, autopct="%1.1f%%")
+    plt.title(title1).set_color("white")
+    plt.pie(values, labels=labels, autopct="%1.1f%%", textprops={'color': "w"})
     
     plt.show()
 
