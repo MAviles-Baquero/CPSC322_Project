@@ -1023,8 +1023,6 @@ class MyRandomForestClassifier:
         N (int): Number of trees to generate
         F (int): Number of subsets to include in each tree
         M (int): Number of best trees to keep
-        remainder_xtrain(list of list of obj): Remainder x values
-        remainder_ytrain(list of list of obj): Remainder y values
         xtrain(list of list of obj): x train for tree construction
         ytrain(list of list of obj): y train for tree construction
         chosen_trees(list of dict): List of all trees
@@ -1047,8 +1045,6 @@ class MyRandomForestClassifier:
         self.N = N
         self.F = F
         self.M = M
-        self.remainder_xtrain = None
-        self.remainder_ytrain = None
         self.xtrain = None
         self.ytrain = None
         self.chosen_trees = None
@@ -1084,7 +1080,7 @@ class MyRandomForestClassifier:
 
             tree['tree'] = self.generate_tree(train_set, tree['attributes'] + [headers[-1]])
             # Determine accuracy
-            self.test_tree(tree, validation_set)
+            tree['accuracy'] = self.test_tree(tree, validation_set)
             trees.append(tree)
 
         # Find best M of N trees
@@ -1101,7 +1097,7 @@ class MyRandomForestClassifier:
             chosen trees
         """
         sorted_list = sorted(trees, key=itemgetter('accuracy'), reverse=True)
-        return sorted_list[:self.N - 1]
+        return sorted_list[:self.M]
 
 
     def test_tree(self, tree, validation_set):
@@ -1110,12 +1106,14 @@ class MyRandomForestClassifier:
         Args:
             tree (dict)
             validation_set (list of list of obj)
-        Note: Includes accuracy in tree dictionary
+        
+        Returns:
+            accuracy (float)
         """
         xdata = [row[:-1] for row in validation_set]
         actual_values = [row[-1] for row in validation_set]
         predicted_values = tree['tree'].predict(xdata)
-        tree['accuracy'] = myutils.calculate_accuracy(predicted_values, actual_values)
+        return myutils.calculate_accuracy(predicted_values, actual_values)
 
     def generate_tree(self, train, attributes):
         """This function generates a decision tree
@@ -1133,29 +1131,6 @@ class MyRandomForestClassifier:
         ydata = [row[-1] for row in train]
         tree.fit(xdata, ydata, allowed_attributes=attributes)
         return tree
-
-    def generate_remainder_set(self, X_train, y_train):
-        """Generates the remainder set and test set
-
-        Args:
-            X_train(list of list of numeric vals): The list of training samples
-                The shape of X_train is (n_train_samples, n_features)
-            y_train(list of numeric vals): The target y values (parallel to X_train) 
-                The shape of y_train is n_train_samples
-        """
-        X_train_folds, X_test_folds = myevaluation.stratified_kfold_cross_validation(X_train, y_train, n_splits=3)
-        # Grab a random remainder fold
-        i = random.randrange(0, 3)
-        remainder_fold = X_test_folds[i]
-        self.remainder_xtrain = myutils.distribute_data_by_index(X_train, remainder_fold)
-        self.remainder_ytrain = myutils.distribute_data_by_index(y_train, remainder_fold)
-
-        # Grab train fold
-        train_fold = X_train_folds[i]
-        self.xtrain = myutils.distribute_data_by_index(X_train, train_fold)
-        self.ytrain = myutils.distribute_data_by_index(y_train, train_fold)
-
-
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
 
@@ -1176,18 +1151,48 @@ class MyRandomForestClassifier:
 
         # Determine each prediction
         for i in range(len(X_test)):
-            items, frequency = myutils.get_item_frequency(predictions[i])
+            cur_prediction = []
+            # Grab all values for each tree
+            for j in range(len(self.chosen_trees)):
+                cur_prediction.append(predictions[j][i])
+
+            items, frequency = myutils.get_item_frequency(cur_prediction)
             winner = max(frequency)
             j = frequency.index(winner)
             y_predicted.append(items[j])
 
         return y_predicted
 
+    def generate_remainder_set(self, X_train, y_train):
+        """Generates the remainder set and test set
+
+        Args:
+            X_train(list of list of numeric vals): The list of training samples
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of numeric vals): The target y values (parallel to X_train) 
+                The shape of y_train is n_train_samples
+
+        Returns
+            the remainder and train x and ytrains
+        """
+        X_train_folds, X_test_folds = myevaluation.stratified_kfold_cross_validation(X_train, y_train, n_splits=3)
+        # Grab a random remainder fold
+        i = random.randrange(0, 3)
+        remainder_fold = X_test_folds[i]
+        remainder_xtrain = myutils.distribute_data_by_index(X_train, remainder_fold)
+        remainder_ytrain = myutils.distribute_data_by_index(y_train, remainder_fold)
+
+        # Grab train fold
+        train_fold = X_train_folds[i]
+        xtrain = myutils.distribute_data_by_index(X_train, train_fold)
+        ytrain = myutils.distribute_data_by_index(y_train, train_fold)
+
+        return xtrain, ytrain, remainder_xtrain, remainder_ytrain
 
 
-
-    def test_tree_performance(self, X_train, y_train):
-        """Tests the forest's performance against a remainder set
+    def test_tree_stratified_kfold(self, X_train, y_train):
+        """Tests the forest's performance against a remainder set derived from a stratified
+        kfold cross validation with 3 splits
 
         Args:
             X_train(list of list of numeric vals): The list of training samples
@@ -1196,6 +1201,14 @@ class MyRandomForestClassifier:
                 The shape of y_train is n_train_samples
 
         Returns: 
-            (str) with performance data
+            (float) accuracy
+            list of predicted and actual values
         """
-        self.generate_remainder_set(X_train, y_train)
+        # Fit data
+        xtrain, ytrain, remainder_xtrain, remainder_ytrain = self.generate_remainder_set(X_train, y_train)
+        self.fit(xtrain, ytrain)
+
+        # test on remainder set
+        predicted = self.predict(remainder_xtrain)
+        accuracy = myutils.calculate_accuracy(predicted, remainder_ytrain)
+        return accuracy, predicted, remainder_ytrain
