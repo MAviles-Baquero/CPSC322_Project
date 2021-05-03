@@ -170,6 +170,7 @@ def confusion_matrix(y_true, y_pred, labels):
 
     # For each true/pred pair, add 1 in the appropriate spot
     for i in range(len(y_true)):
+        
         true_val = y_true[i]
         pred_val = y_pred[i]
         matrix[labels.index(true_val)][labels.index(pred_val)] += 1
