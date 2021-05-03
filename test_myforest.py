@@ -29,6 +29,10 @@ X = [
     ["Junior", "Python", "no", "yes"]
 ]
 y = ["False", "False", "True", "True", "True", "False", "True", "False", "True", "True", "True", "True", "True", "False"]
+xtest = [["Mid", "R", "no", "no"]]
+xtest_solution = []
+xtest2 = [["Junior", "R", "yes", "no"], ["Senior", "Python", "yes", "yes"]]
+xtest2_solution = []
 
 first_decision_tree = [
 
@@ -41,20 +45,27 @@ second_decision_tree = [
 def test_forest_fit():
     # We confirmed that the classifier gives random results by repeatedly running it
     # Unfortunately multiple instances of random are called, making it very difficult to 
-    # test those. As such we grabbed the random attribute results and tested the resulting
-    # trees here, instead of something more complicated
-    random.seed(0)
+    # test those. Especially since the decision tree itself also uses random...
+    # As such we just grabbed the random attribute results and tested the resulting
+    # trees here, instead of trying to predict those values otherwise
+    random.seed(1)
     forest = MyRandomForestClassifier(3, 2, 2)
     forest.fit(X, y)
 
     trees = forest.chosen_trees
     tree = trees[0]
-    assert tree['attributes'] == ['a1', 'a3']
+    assert tree['attributes'] == ['a2', 'a3']
     assert tree['tree'] == first_decision_tree
 
     tree = trees[1]
-    assert tree['attributes'] == ['a2', 'a3']
+    assert tree['attributes'] == ['a2', 'a0']
     assert tree['tree'] == second_decision_tree
 
 def test_forest_predict():
+    random.seed(1)
+    forest = MyRandomForestClassifier(3, 2, 2)
+    forest.fit(X, y)
+    assert forest.predict(xtest) == xtest_solution
+    assert forest.predict(xtest2) == xtest2_solution
+
     assert False == True

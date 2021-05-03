@@ -864,7 +864,7 @@ class MyDecisionTreeClassifier:
 
         return tree
 
-    def fit(self, X_train, y_train):
+    def fit(self, X_train, y_train, allowed_attributes=None):
         """Fits a decision tree classifier to X_train and y_train using the TDIDT (top down induction of decision tree) algorithm.
 
         Args:
@@ -872,6 +872,7 @@ class MyDecisionTreeClassifier:
                 The shape of X_train is (n_train_samples, n_features)
             y_train(list of obj): The target y values (parallel to X_train)
                 The shape of y_train is n_train_samples
+            allowed_attributes (list of str): Allowed attributes in case only some are allowed to be used
 
         Notes:
             Since TDIDT is an eager learning algorithm, this method builds a decision tree model
@@ -883,7 +884,11 @@ class MyDecisionTreeClassifier:
         self.X_train = X_train
         self.y_train = y_train
         # calculate headers ["a0", "a1",...]
-        self.header = myutils.generate_table_header(self.X_train)
+        if allowed_attributes is not None:
+            self.header = allowed_attributes
+            assert self.header[-1] == 'label'
+        else:
+            self.header = myutils.generate_table_header(self.X_train)
         # calculate attribute_domains dictionary
         self.attribute_domains = self.generate_attribute_domains()
         # Stitch together x_train, y_train
@@ -934,7 +939,7 @@ class MyDecisionTreeClassifier:
         y_predicted = []
         for x in X_test:
             #try:
-                y_predicted.append(self.recursive_predict(x, self.tree))
+            y_predicted.append(self.recursive_predict(x, self.tree))
             # except:
             #     y_predicted.append("Failed")
 
@@ -1076,14 +1081,10 @@ class MyRandomForestClassifier:
             tree = {}
             tree['attributes'] = myutils.compute_random_subset(headers[:-1], f)
             train_set, validation_set = myutils.compute_bootstrap(train)
-            # Get right data based on attribute subset
-            # Note: Returns as mypytables
-            train_set = myutils.get_columns_array(train_set, headers, tree['attributes'] + ['label'])
-            validation_set = myutils.get_columns_array(validation_set, headers, tree['attributes'] + ['label'])
 
-            tree['tree'] = self.generate_tree(train_set.data)
+            tree['tree'] = self.generate_tree(train_set, tree['attributes'] + [headers[-1]])
             # Determine accuracy
-            self.test_tree(tree, validation_set.data)
+            self.test_tree(tree, validation_set)
             trees.append(tree)
 
         # Find best M of N trees
@@ -1116,7 +1117,7 @@ class MyRandomForestClassifier:
         predicted_values = tree['tree'].predict(xdata)
         tree['accuracy'] = myutils.calculate_accuracy(predicted_values, actual_values)
 
-    def generate_tree(self, train):
+    def generate_tree(self, train, attributes):
         """This function generates a decision tree
 
         Args:
@@ -1130,7 +1131,7 @@ class MyRandomForestClassifier:
         # Split data up
         xdata = [row[:-1] for row in train]
         ydata = [row[-1] for row in train]
-        tree.fit(xdata, ydata)
+        tree.fit(xdata, ydata, allowed_attributes=attributes)
         return tree
 
     def generate_remainder_set(self, X_train, y_train):
@@ -1165,7 +1166,25 @@ class MyRandomForestClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        pass
+        # Run predictions
+        y_predicted = []
+        predictions = []
+        for tree in self.chosen_trees:
+            current_tree = tree['tree']
+            prediction = current_tree.predict(X_test)
+            predictions.append(prediction)
+
+        # Determine each prediction
+        for i in range(len(X_test)):
+            items, frequency = myutils.get_item_frequency(predictions[i])
+            winner = max(frequency)
+            j = frequency.index(winner)
+            y_predicted.append(items[j])
+
+        return y_predicted
+
+
+
 
     def test_tree_performance(self, X_train, y_train):
         """Tests the forest's performance against a remainder set
