@@ -34,7 +34,6 @@ xtest_solution = ["True"]
 xtest2 = [["Junior", "R", "yes", "no"], ["Senior", "Python", "yes", "yes"]]
 xtest2_solution = ["True", "False"]
 
-
 """
 a0 -> level
 a1 -> lang
