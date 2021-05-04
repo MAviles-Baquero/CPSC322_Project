@@ -6,7 +6,7 @@ import mysklearn.myutils as myutils
 
 from mysklearn.myclassifiers import MySimpleLinearRegressor, MyKNeighborsClassifier, MyNaiveBayesClassifier, MyDecisionTreeClassifier, MyRandomForestClassifier
 
-# pasted from DecisionTreeFun
+# posted from DecisionTreeFun
 header = ["level", "lang", "tweets", "phd"]
 attribute_domains = {"level": ["Senior", "Mid", "Junior"], 
     "lang": ["R", "Python", "Java"],
@@ -30,15 +30,68 @@ X = [
 ]
 y = ["False", "False", "True", "True", "True", "False", "True", "False", "True", "True", "True", "True", "True", "False"]
 xtest = [["Mid", "R", "no", "no"]]
-xtest_solution = []
+xtest_solution = ["True"]
 xtest2 = [["Junior", "R", "yes", "no"], ["Senior", "Python", "yes", "yes"]]
-xtest2_solution = []
+# DOUBLE CHECK THE SECOND TRUE IN SOLUTION AND PREDICTED
+xtest2_solution = ["True", "True"]
 
+
+"""
+a0 -> level
+a1 -> lang
+a2 -> tweets
+a3 -> phd
+"""
+
+# attributes of a2 and a3 (Tweets and PhD)
 first_decision_tree = [
-
+    ['Attribute', 'a2', 
+        ['Value', 'Mid', 
+            ['Leaf', 'True', 3, 14]
+        ], 
+        ['Value', 'Senior', 
+            ['Attribute', 'a3', 
+                ['Value', 'R', 
+                    ['Leaf', 'True', 2, 6]
+                ], 
+                ['Value', 'Python', 
+                    ['Leaf', 'False', 3, 6]
+                ], 
+                ['Value', 'Java', 
+                    ['Leaf', 'False', 1, 6]
+                ]
+            ]
+        ], 
+        ['Value', 'Junior', 
+            ['Leaf', 'True', 5, 14]
+        ]
+    ]
 ]
-second_decision_tree = [
 
+
+# attributes of a2 and a0 (Tweets and Level)
+second_decision_tree = [
+    ['Attribute', 'a2', 
+        ['Value', 'Mid', 
+            ['Leaf', 'True', 3, 14]
+        ], 
+        ['Value', 'Senior', 
+            ['Attribute', 'a0', 
+                ['Value', 'Python', 
+                    ['Leaf', 'False', 2, 7]
+                ], 
+                ['Value', 'R', 
+                    ['Leaf', 'True', 1, 7]
+                ], 
+                ['Value', 'Java', 
+                    ['Leaf', 'False', 4, 7]
+                ]
+            ]
+        ], 
+        ['Value', 'Junior', 
+            ['Leaf', 'True', 4, 14]
+        ]
+    ]
 ]
 
 
@@ -51,9 +104,15 @@ def test_forest_fit():
     random.seed(1)
     forest = MyRandomForestClassifier(3, 2, 2)
     forest.fit(X, y)
-
+    
     trees = forest.chosen_trees
     tree = trees[0]
+    
+#     for i in range(len(trees)):
+#         print(sort[i].chosen_trees[0])
+        
+#     print(tree['tree'])
+        
     assert tree['attributes'] == ['a2', 'a3']
     assert tree['tree'] == first_decision_tree
 
