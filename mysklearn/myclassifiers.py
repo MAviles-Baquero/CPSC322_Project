@@ -1085,7 +1085,7 @@ class MyRandomForestClassifier:
 
         # Find best M of N trees
         self.chosen_trees = self.find_best_trees(trees)
-        print(self.chosen_trees)
+        #print(self.chosen_trees)
 
     def find_best_trees(self, trees):
         """Finds the best N trees
