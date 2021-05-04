@@ -32,9 +32,7 @@ y = ["False", "False", "True", "True", "True", "False", "True", "False", "True",
 xtest = [["Mid", "R", "no", "no"]]
 xtest_solution = ["True"]
 xtest2 = [["Junior", "R", "yes", "no"], ["Senior", "Python", "yes", "yes"]]
-# DOUBLE CHECK THE SECOND TRUE IN SOLUTION AND PREDICTED
-xtest2_solution = ["True", "True"]
-
+xtest2_solution = ["True", "False"]
 
 """
 a0 -> level
