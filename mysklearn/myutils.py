@@ -506,3 +506,34 @@ def normalize_data(col):
     for i in range(len(col)):
         col[i] = (col[i] - col_min) / normalizer
 
+        
+        
+        
+        
+        
+def percentage_of_population(table, subtable, col):
+    # go through the table and count the instances of each unique item in the col
+    total_count = {}
+    sub_count = {}
+    percentages = {}
+    
+    for i in range(len(table)):
+        if table[i][col] not in total_count:
+            total_count[table[i][col]] = 0
+        else:
+            total_count[table[i][col]] += 1
+    
+    for j in range(len(subtable)):
+        if subtable[j][col] not in sub_count:
+            sub_count[subtable[j][col]] = 0
+        else:
+            sub_count[subtable[j][col]] += 1
+            
+            
+    for k in sub_count:
+        if total_count[k] == 0:
+            percentages[k] = 0
+        else:
+            percentages[k] = sub_count[k]/total_count[k]
+        
+    return percentages
