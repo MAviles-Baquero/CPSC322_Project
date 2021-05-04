@@ -1,8 +1,14 @@
+# Name: Tristan Call
+# Date: 5/1/21
+# Description: This file contains all the used classifiers
+
 import mysklearn.myutils as myutils
 from mysklearn.mypytable import MyPyTable
 import math
 import copy
 import random
+import mysklearn.myevaluation as myevaluation
+from operator import itemgetter
 
 class MySimpleLinearRegressor:
     """Represents a simple linear regressor.
@@ -532,17 +538,18 @@ class MyZeroRClassifier:
         self.y_train = Y_train
 
         # Group the data by label
-        all_data = MyPyTable(column_names="label", data=self.y_train)
+        ytrain_2d = [[y] for y in self.y_train]
+        all_data = MyPyTable(column_names="label", data=ytrain_2d)
         headers, subtables = all_data.group_by("label")
         
         # Find the most common label
         max_count = len(subtables[0])
-        max_value = subtables[0][0]
+        max_value = subtables[0][0][0]
         for subtable in subtables:
             count = len(subtable)
             if count > max_count:
                 max_count = count
-                max_value = subtable[0]
+                max_value = subtable[0][0]
 
         self.prediction = max_value
 
@@ -857,7 +864,7 @@ class MyDecisionTreeClassifier:
 
         return tree
 
-    def fit(self, X_train, y_train):
+    def fit(self, X_train, y_train, allowed_attributes=None):
         """Fits a decision tree classifier to X_train and y_train using the TDIDT (top down induction of decision tree) algorithm.
 
         Args:
@@ -865,6 +872,7 @@ class MyDecisionTreeClassifier:
                 The shape of X_train is (n_train_samples, n_features)
             y_train(list of obj): The target y values (parallel to X_train)
                 The shape of y_train is n_train_samples
+            allowed_attributes (list of str): Allowed attributes in case only some are allowed to be used
 
         Notes:
             Since TDIDT is an eager learning algorithm, this method builds a decision tree model
@@ -876,7 +884,11 @@ class MyDecisionTreeClassifier:
         self.X_train = X_train
         self.y_train = y_train
         # calculate headers ["a0", "a1",...]
-        self.header = myutils.generate_table_header(self.X_train)
+        if allowed_attributes is not None:
+            self.header = allowed_attributes
+            assert self.header[-1] == 'label'
+        else:
+            self.header = myutils.generate_table_header(self.X_train)
         # calculate attribute_domains dictionary
         self.attribute_domains = self.generate_attribute_domains()
         # Stitch together x_train, y_train
@@ -927,7 +939,7 @@ class MyDecisionTreeClassifier:
         y_predicted = []
         for x in X_test:
             #try:
-                y_predicted.append(self.recursive_predict(x, self.tree))
+            y_predicted.append(self.recursive_predict(x, self.tree))
             # except:
             #     y_predicted.append("Failed")
 
@@ -1003,3 +1015,200 @@ class MyDecisionTreeClassifier:
             You will need to install graphviz in the Docker container as shown in class to complete this method.
         """
         pass # TODO: (BONUS) fix this
+
+class MyRandomForestClassifier:
+    """Represents a random forest.
+
+    Attributes:
+        N (int): Number of trees to generate
+        F (int): Number of subsets to include in each tree
+        M (int): Number of best trees to keep
+        xtrain(list of list of obj): x train for tree construction
+        ytrain(list of list of obj): y train for tree construction
+        chosen_trees(list of dict): List of all trees
+            Structure of {'tree': MyDecisionTree, 'attributes': [str of included], 
+                'accuracy': float}
+        
+
+    Notes:
+        Terminology: instance = sample = row and attribute = feature = column
+    """
+    
+    def __init__(self, N, F, M):
+        """Initializer for MyRandomForestClassifier.
+
+        Args:
+            N (int): Number of trees to generate
+            F (int): Number of subsets to include in each tree
+            M (int): Number of best trees to keep            
+        """
+        self.N = N
+        self.F = F
+        self.M = M
+        self.xtrain = None
+        self.ytrain = None
+        self.chosen_trees = None
+
+
+    def fit(self, X_train, y_train):
+        """Fits a simple linear regression line to X_train and y_train.
+
+        Args:
+            X_train(list of list of numeric vals): The list of training samples
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of numeric vals): The target y values (parallel to X_train) 
+                The shape of y_train is n_train_samples
+        """
+        self.xtrain = X_train
+        self.ytrain = y_train
+        trees = []
+
+        # Get data into right formats
+        train = [self.xtrain[i] + [self.ytrain[i]] for i in range(len(self.xtrain))]
+        headers = myutils.generate_table_header(self.xtrain)
+        # Set F to valid value
+        f = self.F
+        if f > len(headers):
+            f = len(headers)
+
+        # Generate trees
+        for i in range(self.N):
+            # Grab random attribute subset and compute bootsrap
+            tree = {}
+            tree['attributes'] = myutils.compute_random_subset(headers[:-1], f)
+            train_set, validation_set = myutils.compute_bootstrap(train)
+
+            tree['tree'] = self.generate_tree(train_set, tree['attributes'] + [headers[-1]])
+            # Determine accuracy
+            tree['accuracy'] = self.test_tree(tree, validation_set)
+            trees.append(tree)
+
+        # Find best M of N trees
+        self.chosen_trees = self.find_best_trees(trees)
+        print(self.chosen_trees)
+
+    def find_best_trees(self, trees):
+        """Finds the best N trees
+
+        Args:
+            trees (list of dict)
+        
+        Returns:
+            chosen trees
+        """
+        sorted_list = sorted(trees, key=itemgetter('accuracy'), reverse=True)
+        return sorted_list[:self.M]
+
+
+    def test_tree(self, tree, validation_set):
+        """Tests the tree and computes the accuracy
+
+        Args:
+            tree (dict)
+            validation_set (list of list of obj)
+        
+        Returns:
+            accuracy (float)
+        """
+        xdata = [row[:-1] for row in validation_set]
+        actual_values = [row[-1] for row in validation_set]
+        predicted_values = tree['tree'].predict(xdata)
+        return myutils.calculate_accuracy(predicted_values, actual_values)
+
+    def generate_tree(self, train, attributes):
+        """This function generates a decision tree
+
+        Args:
+            train(list of list of numeric vals): The list of training samples with class labels
+                The shape of X_train is (n_train_samples, n_features)
+        
+        Returns:
+            MyDecisionTree
+        """
+        tree = MyDecisionTreeClassifier()
+        # Split data up
+        xdata = [row[:-1] for row in train]
+        ydata = [row[-1] for row in train]
+        tree.fit(xdata, ydata, allowed_attributes=attributes)
+        return tree
+    def predict(self, X_test):
+        """Makes predictions for test instances in X_test.
+
+        Args:
+            X_test(list of list of obj): The list of testing samples
+                The shape of X_test is (n_test_samples, n_features)
+
+        Returns:
+            y_predicted(list of obj): The predicted target y values (parallel to X_test)
+        """
+        # Run predictions
+        y_predicted = []
+        predictions = []
+        for tree in self.chosen_trees:
+            current_tree = tree['tree']
+            prediction = current_tree.predict(X_test)
+            predictions.append(prediction)
+
+        # Determine each prediction
+        for i in range(len(X_test)):
+            cur_prediction = []
+            # Grab all values for each tree
+            for j in range(len(self.chosen_trees)):
+                cur_prediction.append(predictions[j][i])
+
+            items, frequency = myutils.get_item_frequency(cur_prediction)
+            winner = max(frequency)
+            j = frequency.index(winner)
+            y_predicted.append(items[j])
+
+        return y_predicted
+
+    def generate_remainder_set(self, X_train, y_train):
+        """Generates the remainder set and test set
+
+        Args:
+            X_train(list of list of numeric vals): The list of training samples
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of numeric vals): The target y values (parallel to X_train) 
+                The shape of y_train is n_train_samples
+
+        Returns
+            the remainder and train x and ytrains
+        """
+        X_train_folds, X_test_folds = myevaluation.stratified_kfold_cross_validation(X_train, y_train, n_splits=3)
+        # Grab a random remainder fold
+        i = random.randrange(0, 3)
+        remainder_fold = X_test_folds[i]
+        remainder_xtrain = myutils.distribute_data_by_index(X_train, remainder_fold)
+        remainder_ytrain = myutils.distribute_data_by_index(y_train, remainder_fold)
+
+        # Grab train fold
+        train_fold = X_train_folds[i]
+        xtrain = myutils.distribute_data_by_index(X_train, train_fold)
+        ytrain = myutils.distribute_data_by_index(y_train, train_fold)
+
+        return xtrain, ytrain, remainder_xtrain, remainder_ytrain
+
+
+    def test_tree_stratified_kfold(self, X_train, y_train):
+        """Tests the forest's performance against a remainder set derived from a stratified
+        kfold cross validation with 3 splits
+
+        Args:
+            X_train(list of list of numeric vals): The list of training samples
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of numeric vals): The target y values (parallel to X_train) 
+                The shape of y_train is n_train_samples
+
+        Returns: 
+            (float) accuracy
+            list of predicted and actual values
+        """
+        # Fit data
+        xtrain, ytrain, remainder_xtrain, remainder_ytrain = self.generate_remainder_set(X_train, y_train)
+        self.fit(xtrain, ytrain)
+
+        # test on remainder set
+        predicted = self.predict(remainder_xtrain)
+        accuracy = myutils.calculate_accuracy(predicted, remainder_ytrain)
+        return accuracy, predicted, remainder_ytrain
