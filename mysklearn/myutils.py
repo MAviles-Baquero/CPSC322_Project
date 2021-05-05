@@ -468,48 +468,7 @@ def get_columns_array(data, header, columns):
     return columns
 
 
-""" Group Project Helper Functions for Visualizations"""
-
-def normalize_data_cols(X):
-    """Normalizes all columns of a dataset
-
-    Args:
-        column_data (list of list of obj): X_train data
-
-    Returns:
-        column_data (list of list of obj): X_train data normalized  
-        
-    NOTE: For continuous values only!
-    """
-    # Swap into column form to simplify normalizing
-    column_data = swap_rows_cols(X)
-    # Normalize every attribute
-    for i in range(len(column_data)):
-        normalize_data(column_data[i])
-
-    # Swap back and return
-    column_data = swap_rows_cols(column_data)
-    return column_data
-
-
-def normalize_data(col):
-    """This normalizes a column based on its min and max value
-
-    Args:
-        col (list of obj)
-
-    NOTE: For continuous values only!
-    """
-    col_min = min(col)
-    normalizer = max(col) - col_min
-    # Normalize the column
-    for i in range(len(col)):
-        col[i] = (col[i] - col_min) / normalizer
-
-        
-        
-        
-        
+""" Group Project Helper Functions for Visualizations"""   
         
 def percentage_of_population(table, subtable, col):
     # go through the table and count the instances of each unique item in the col
