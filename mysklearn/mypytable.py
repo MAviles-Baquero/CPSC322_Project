@@ -8,7 +8,7 @@ import csv
 import math
 import re
 import mysklearn.myutils as myutils
-from tabulate import tabulate # uncomment if you want to use the pretty_print() method
+#from tabulate import tabulate # uncomment if you want to use the pretty_print() method
 # install tabulate with: pip install tabulate
 
 # required functions/methods are noted with TODOs
