@@ -79,6 +79,6 @@ def get_forest():
 
  
 if __name__ == "__main__":
-    port = of.environ.get("PORT", 5000)
+    port = os.environ.get("PORT", 5000)
     app.run(debug=FALSE, host = "0.0.0.0", port=port)
     # app.run(debug=True)
