@@ -40,11 +40,8 @@ def predict():
 
     # Test the classifier
     xtest = [[birth_year[0], gender, hispanic, race, income, education]]
-    print(xtest)
     forest = get_forest()
-    print(forest.chosen_trees)
     result = forest.predict(xtest)    
-    print(result)
 
     if result[0] == 1:
         result = "Delayed or canceled"
