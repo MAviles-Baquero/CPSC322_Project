@@ -1,3 +1,4 @@
+
 # Name: Tristan Call
 # Assignment: PA4
 # Date: 2/28/20
@@ -468,10 +469,9 @@ def get_columns_array(data, header, columns):
     return columns
 
 
-""" Group Project Helper Functions for Visualizations"""   
-        
+""" Group Project Helper Functions for Visualizations"""
+
 def percentage_of_population(table, subtable, col):
-    # go through the table and count the instances of each unique item in the col
     total_count = {}
     sub_count = {}
     percentages = {}
@@ -481,18 +481,17 @@ def percentage_of_population(table, subtable, col):
             total_count[table[i][col]] = 0
         else:
             total_count[table[i][col]] += 1
-    
+            
     for j in range(len(subtable)):
         if subtable[j][col] not in sub_count:
             sub_count[subtable[j][col]] = 0
         else:
             sub_count[subtable[j][col]] += 1
             
-            
-    for k in sub_count:
-        if total_count[k] == 0:
-            percentages[k] = 0
+    for k in range(len(table)):
+        if total_count[table[k][col]] != 0:
+            percentages[table[k][col]] = sub_count[table[k][col]]/total_count[table[k][col]]
         else:
-            percentages[k] = sub_count[k]/total_count[k]
-        
+            percentages[table[k][col]] = 0
+
     return percentages
