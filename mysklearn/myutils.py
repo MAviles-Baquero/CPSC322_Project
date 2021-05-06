@@ -471,6 +471,15 @@ def get_columns_array(data, header, columns):
 """ Group Project Helper Functions for Visualizations"""
 
 def percentage_of_population(table, subtable, col):
+    """Finds the percentage of a group within a population
+    Args:
+        table (list of lists): total dataset/table
+        subtable (list of lists): specific instances split from table
+        col (int): column index
+    Returns:
+        percentages (dict of ints)
+    
+    """
     total_count = {}
     sub_count = {}
     percentages = {}
